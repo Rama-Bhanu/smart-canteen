@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Lunch Menu</title>
+
+<link rel="stylesheet" href="styles.css">
+
+<style>
+
+.food-card{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:20px;
+}
+
+.food-left{
+display:flex;
+align-items:center;
+gap:18px;
+}
+
+.food-left img{
+width:90px;
+height:90px;
+border-radius:50%;
+object-fit:cover;
+border:3px solid #2bb5c7;
+}
+
+.food-details h3{
+margin:0;
+font-size:22px;
+}
+
+.food-details p{
+margin-top:8px;
+font-size:18px;
+font-weight:bold;
+color:#2bb5c7;
+}
+
+.quantity{
+display:flex;
+align-items:center;
+gap:12px;
+}
+
+.quantity button{
+width:38px;
+height:38px;
+padding:0;
+font-size:18px;
+}
+
+.add-btn{
+padding:10px 18px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h2>Lunch Menu</h2>
+
+<div>
+
+<button onclick="location.href='cart.html'">
+View Cart
+</button>
+
+<button onclick="location.href='menu.html'">
+Back
+</button>
+
+</div>
+
+</header>
+
+<div class="container">
+
+<h1>Lunch</h1>
+
+<p>Select your favourite lunch items.</p>
+
+<div id="menuContainer"></div>
+
+</div>
+
+<script type="module">
+import { db } from "./firebase.js";
+
+import {
+collection,
+onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+
+let menu = [];
+
+function getCart(){
+
+return JSON.parse(localStorage.getItem("cart")) || [];
+
+}
+
+function saveCart(cart){
+
+localStorage.setItem("cart",JSON.stringify(cart));
+
+}
+
+function addToCart(item){
+
+let cart=getCart();
+
+let existing=cart.find(i=>i.name===item.name);
+
+if(existing){
+
+existing.quantity++;
+
+}else{
+
+item.quantity=1;
+
+cart.push(item);
+
+}
+
+saveCart(cart);
+
+renderLunch();
+
+}
+function increaseQuantity(itemName){
+
+let cart=getCart();
+
+let item=cart.find(i=>i.name===itemName);
+
+if(item){
+item.quantity++;
+}
+
+saveCart(cart);
+
+renderLunch();
+
+}
+
+function decreaseQuantity(itemName){
+
+let cart=getCart();
+
+let item=cart.find(i=>i.name===itemName);
+
+if(item){
+
+item.quantity--;
+
+if(item.quantity<=0){
+cart=cart.filter(i=>i.name!==itemName);
+}
+
+}
+
+saveCart(cart);
+
+renderLunch();
+
+}
+
+function renderLunch(){
+
+
+
+let container=document.getElementById("menuContainer");
+
+container.innerHTML="";
+
+let cart=getCart();
+
+console.log(menu);
+
+
+
+let lunchItems = menu.filter(item =>
+    item.category === "Lunch" &&
+    item.available === true
+);
+
+console.log(lunchItems);
+
+if(lunchItems.length===0){
+
+container.innerHTML=`
+
+<div class="card">
+
+<h3 style="text-align:center;">
+No Lunch Items Available
+</h3>
+
+</div>
+
+`;
+
+return;
+
+}
+
+lunchItems.forEach(item=>{
+
+let cartItem=cart.find(i=>i.name===item.name);
+
+container.innerHTML+=`
+
+<div class="card">
+
+<div class="food-card">
+
+<div class="food-left">
+
+<img src="${item.image || 'https://placehold.co/90x90?text=Food'}" alt="${item.name}">
+
+<div class="food-details">
+
+<h3>${item.name}</h3>
+
+<p>₹${item.price}</p>
+
+</div>
+
+</div>
+
+<div>
+
+${
+cartItem ?
+
+`
+
+<div class="quantity">
+
+<button onclick="decreaseQuantity('${item.name}')">-</button>
+
+<span style="font-size:20px;font-weight:bold;min-width:20px;text-align:center;">
+
+${cartItem.quantity}
+
+</span>
+
+<button onclick="increaseQuantity('${item.name}')">+</button>
+
+</div>
+
+`
+
+:
+
+`
+
+<button class="add-btn"
+onclick='addToCart(${JSON.stringify(item)})'>
+
+Add to Cart
+
+</button>
+
+`
+
+}
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+
+onSnapshot(collection(db,"menu"),(snapshot)=>{
+
+    menu=[];
+
+    snapshot.forEach(docSnap=>{
+
+        menu.push(docSnap.data());
+
+    });
+
+    renderLunch();
+
+});
+window.addToCart = addToCart;
+window.increaseQuantity = increaseQuantity;
+window.decreaseQuantity = decreaseQuantity;
+
+</script>
+
+</body>
+
+</html>

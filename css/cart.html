@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Your Shopping Cart</title>
+<link rel="stylesheet" href="styles.css">
+
+<style>
+
+.cart-layout{
+display:grid;
+grid-template-columns:2fr 1fr;
+gap:30px;
+}
+
+.cart-item{
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:1px solid #eee;
+padding:15px 0;
+}
+
+.summary{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+.total{
+font-size:22px;
+font-weight:bold;
+color:#2bb5c7;
+}
+
+.place-btn{
+width:100%;
+margin-top:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>Smart Canteen</h2>
+<button onclick="location.href='menu.html'">Back to Menu</button>
+</header>
+
+<div class="container">
+
+<h1>Your Shopping Cart</h1>
+<p>Review your items before placing the order</p>
+
+<div class="cart-layout">
+
+<div class="card" id="cartItems"></div>
+
+<div class="summary">
+
+<h3>Order Summary</h3>
+
+<p>Subtotal: ₹<span id="subtotal">0</span></p>
+
+<hr>
+
+<p class="total">
+Total: ₹<span id="total">0</span>
+</p>
+
+<button class="place-btn" onclick="placeOrder()">
+Place Order
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script type="module">
+import { db } from "./firebase.js";
+import {
+collection,
+addDoc,
+getDocs
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+let cart = JSON.parse(localStorage.getItem("cart")) || []
+
+function renderCart(){
+
+let container = document.getElementById("cartItems")
+
+let subtotal = 0
+
+container.innerHTML=""
+
+cart.forEach((item,i)=>{
+
+subtotal += item.price * (item.quantity || 1)
+container.innerHTML += `
+
+<div class="cart-item">
+
+<div>
+<h3>${item.name}</h3>
+
+<p>
+₹${item.price}
+×
+${item.quantity || 1}
+</p>
+</div>
+
+<button onclick="removeItem(${i})">
+Remove
+</button>
+
+</div>
+
+`
+
+})
+
+document.getElementById("subtotal").innerText = subtotal
+document.getElementById("total").innerText = subtotal
+
+}
+
+function removeItem(i){
+
+cart.splice(i,1)
+
+localStorage.setItem("cart",JSON.stringify(cart))
+
+renderCart()
+
+}
+function generateToken(itemName, orders){
+
+    let prefix = itemName
+        .split(" ")
+        .map(word => word[0])
+        .join("")
+        .toUpperCase();
+
+    let count =
+        orders.filter(o => o.item === itemName)
+              .length + 1;
+
+    return prefix + count;
+}
+function generateOrderId(){
+
+    let orderCounter =
+        parseInt(localStorage.getItem("orderCounter")) || 0;
+
+    orderCounter++;
+
+    localStorage.setItem(
+        "orderCounter",
+        orderCounter
+    );
+
+    return "ORD" +
+           String(orderCounter).padStart(3,"0");
+}
+async function placeOrder(){
+
+    const snapshot = await getDocs(collection(db,"orders"));
+
+let orders = [];
+
+snapshot.forEach(docSnap=>{
+
+    orders.push(docSnap.data());
+
+});
+    let orderId = generateOrderId();
+
+   for (const item of cart) {
+
+    for(let i = 0; i < item.quantity; i++){
+
+        let token = generateToken(item.name, orders);
+
+        let sameItemQueue = orders.filter(o =>
+            o.item === item.name &&
+            (o.status === "PLACED" || o.status === "PREPARING")
+        );
+
+        let queuePosition = sameItemQueue.length + 1;
+
+        let batchSize = Number(item.batchSize);
+
+        let batchNumber = Math.ceil(queuePosition / batchSize);
+
+        let initialETA = batchNumber * Number(item.prepTime);
+
+        await addDoc(collection(db,"orders"),{
+
+            orderId:orderId,
+
+            token:token,
+
+            item:item.name,
+
+            quantity:1,
+
+            prepTime:item.prepTime,
+
+            batchSize:item.batchSize,
+
+            initialETA:initialETA,
+
+            remainingTime:initialETA,
+
+            status:"PLACED",
+
+            startTime:Date.now(),
+
+            served:false,
+
+            extraTime:0
+
+        });
+
+        // Update local orders array so next token and queue are correct
+        orders.push({
+            item:item.name,
+            status:"PLACED"
+        });
+
+    }
+
+}
+    localStorage.removeItem("cart");
+
+    window.location = "track-order.html";
+
+}
+window.placeOrder = placeOrder;
+window.removeItem = removeItem;
+
+renderCart()
+
+</script>
+
+</body>
+</html>

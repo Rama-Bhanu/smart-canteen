@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu Management</title>
+
+<link rel="stylesheet" href="styles.css">
+
+<style>
+
+body{
+    font-family:Arial,sans-serif;
+    background:#f5f7fa;
+    margin:0;
+}
+
+header{
+    background:#2bb5c7;
+    color:white;
+    padding:15px 25px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+header button{
+    background:white;
+    color:#2bb5c7;
+    border:none;
+    padding:10px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.container{
+    width:90%;
+    max-width:900px;
+    margin:40px auto;
+    text-align:center;
+}
+
+h1{
+    color:#333;
+    margin-bottom:40px;
+}
+
+.category-nav{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:25px;
+}
+
+.category-card{
+    background:white;
+    padding:40px 20px;
+    border-radius:15px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+    transition:.3s;
+}
+
+.category-card:hover{
+    transform:translateY(-5px);
+}
+
+.category-card h2{
+    margin:15px 0;
+    color:#333;
+}
+
+.category-card p{
+    color:#666;
+    margin-bottom:20px;
+}
+
+.category-card button{
+    background:#2bb5c7;
+    color:white;
+    border:none;
+    padding:12px 25px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+.category-card button:hover{
+    background:#2398a7;
+}
+
+.icon{
+    font-size:60px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+    <h2>Smart Canteen Admin</h2>
+    <button onclick="location.href='admin-dashboard.html'">Back</button>
+</header>
+
+<div class="container">
+
+    <h1>Menu Management</h1>
+
+    <div class="category-nav">
+
+        <div class="category-card">
+            <div class="icon">🍽️</div>
+            <h2>Breakfast</h2>
+            <p>Manage all breakfast menu items.</p>
+            <button onclick="location.href='breakfast.html'">
+                Open Breakfast
+            </button>
+        </div>
+
+        <div class="category-card">
+            <div class="icon">🍛</div>
+            <h2>Lunch</h2>
+            <p>Manage all lunch menu items.</p>
+            <button onclick="location.href='lunch.html'">
+                Open Lunch
+            </button>
+        </div>
+
+        <div class="category-card">
+            <div class="icon">🌙</div>
+            <h2>Dinner</h2>
+            <p>Manage all dinner menu items.</p>
+            <button onclick="location.href='dinner.html'">
+                Open Dinner
+            </button>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

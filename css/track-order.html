@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Track Your Orders</title>
+<link rel="stylesheet" href="styles.css">
+
+<style>
+
+.order-card{
+margin-bottom:20px;
+}
+
+.summary-grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:20px;
+margin-bottom:30px;
+}
+
+
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+<h2>Smart Canteen</h2>
+<button onclick="location.href='menu.html'">Back to Menu</button>
+</header>
+
+<div class="container">
+
+<h1>Track Your Orders</h1>
+
+<div class="summary-grid">
+
+<div class="card">
+<h3>Active Items</h3>
+<p id="activeItems"></p>
+</div>
+
+<div class="card">
+<h3>Estimated Total</h3>
+<p id="totalETA"></p>
+</div>
+
+<div class="card">
+<h3>Order ID</h3>
+<p id="orderId"></p>
+</div>
+
+</div>
+
+<div id="ordersContainer"></div>
+
+</div>
+
+<script type="module">
+import { db} from "./firebase.js";
+
+import {
+collection,
+onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+//await Notification.requestPermission();
+//const permission = await Notification.requestPermission();
+
+//if(permission === "granted"){
+
+//    console.log("Notification permission granted");
+
+//}else{
+
+//    alert("Please allow notifications");
+
+//}
+//const token = await getToken(messaging,{
+
+//    vapidKey:"BMcqlgA90H1Wi1Ul_WdJiuifwGKxPqWQTz2VjJ4z1qHiKNngHtobjP-GDB2AG0xNBY1dDoiwC85AaE3-UCBjYJc"
+
+//});
+
+//console.log("FCM Token:",token);
+let orders = [];
+
+
+function renderOrders(){
+
+    const container = document.getElementById("ordersContainer");
+    container.innerHTML = "";
+
+   let maxETA = 0;
+let activeItems = 0;
+
+const oneHour = 60 * 60 * 1000;
+
+const visibleOrders = orders.filter(order =>
+    !(
+        order.served &&
+        order.servedTime &&
+        Date.now() - order.servedTime >= oneHour
+    )
+);
+
+document.getElementById("orderId").innerText =
+    visibleOrders[0]?.orderId || "-";
+
+visibleOrders.forEach(order=>{
+
+        let elapsed = Math.floor(
+            (Date.now()-order.startTime)/60000
+        );
+
+        let eta = Math.max(
+    0,
+    order.initialETA +
+    (order.extraTime || 0) -
+    elapsed
+);
+        // Status calculation
+        if(order.served){
+
+            order.status = "SERVED";
+
+        }
+        else if(eta===0){
+
+            order.status = "READY";
+
+        }
+        else if(elapsed>=2){
+
+            order.status = "PREPARING";
+
+        }
+        else{
+
+            order.status = "PLACED";
+
+        }
+
+        if(order.status==="PLACED" ||
+           order.status==="PREPARING"){
+
+            activeItems++;
+            maxETA = Math.max(maxETA,eta);
+
+        }
+
+        let statusText = order.status;
+
+        if(order.status==="READY"){
+
+            statusText =
+            "<span style='color:green;font-weight:bold;'>READY 🍽️</span>";
+
+        }
+
+        if(order.status==="SERVED"){
+
+            statusText =
+            "<span style='color:green;font-weight:bold;'>SERVED ✅</span>";
+
+        }
+
+        container.innerHTML += `
+
+        <div class="card order-card">
+
+            <h3>${order.item}</h3>
+
+            <p><b>Token Number:</b> ${order.token}</p>
+
+            ${
+            order.status!=="READY" &&
+            order.status!=="SERVED"
+
+            ?
+
+            `<p><b>Ready In:</b> ${eta} mins</p>`
+
+            :
+
+            ""
+            }
+
+            <p><b>Status:</b> ${statusText}</p>
+
+        </div>
+
+        `;
+
+    });
+
+    document.getElementById("activeItems").innerText =
+    activeItems;
+
+if (visibleOrders.length === 0) {
+    document.getElementById("totalETA").innerText = "-";
+} else {
+    document.getElementById("totalETA").innerText =
+        maxETA === 0 ? "Ready" : maxETA + " mins";
+}
+}
+
+onSnapshot(collection(db,"orders"),(snapshot)=>{
+
+    orders=[];
+
+    snapshot.forEach((docSnap)=>{
+
+        orders.push({
+
+            id:docSnap.id,
+            ...docSnap.data()
+
+        });
+
+    });
+
+    renderOrders();
+
+});
+setInterval(renderOrders,60000);
+</script>
+
+</body>
+</html>

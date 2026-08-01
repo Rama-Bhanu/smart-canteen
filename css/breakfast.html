@@ -1,0 +1,394 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Breakfast Menu</title>
+<link rel="stylesheet" href="styles.css">
+
+<style>
+
+body{
+font-family:Arial,sans-serif;
+background:#f5f5f5;
+margin:0;
+}
+
+header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:15px 30px;
+background:#2bb5c7;
+color:white;
+}
+
+.container{
+width:90%;
+margin:20px auto;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+gap:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+
+.item-card{
+position:relative;
+}
+
+.toggle{
+position:absolute;
+top:20px;
+right:20px;
+}
+
+.switch{
+position:relative;
+display:inline-block;
+width:42px;
+height:22px;
+}
+
+.switch input{
+display:none;
+}
+
+.slider{
+position:absolute;
+cursor:pointer;
+top:0;
+left:0;
+right:0;
+bottom:0;
+background:#ccc;
+border-radius:30px;
+transition:.3s;
+}
+
+.slider:before{
+content:"";
+position:absolute;
+height:16px;
+width:16px;
+left:3px;
+bottom:3px;
+background:white;
+border-radius:50%;
+transition:.3s;
+}
+
+input:checked+.slider{
+background:#2bb5c7;
+}
+
+input:checked+.slider:before{
+transform:translateX(20px);
+}
+
+.food-header{
+display:flex;
+align-items:center;
+gap:15px;
+margin-bottom:10px;
+}
+
+.food-icon{
+width:60px;
+height:60px;
+border-radius:50%;
+object-fit:cover;
+border:2px solid #2bb5c7;
+}
+
+.price{
+font-weight:bold;
+font-size:18px;
+margin:8px 0;
+}
+
+button{
+padding:10px 15px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+background:#2bb5c7;
+color:white;
+margin-right:8px;
+margin-top:8px;
+}
+
+.delete-btn{
+background:#e74c3c;
+}
+
+.add-form{
+margin-top:40px;
+}
+
+input{
+width:100%;
+padding:10px;
+margin-top:10px;
+border:1px solid #ccc;
+border-radius:8px;
+box-sizing:border-box;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+<h2>Smart Canteen Admin</h2>
+
+<button onclick="location.href='admin-menu.html'">
+⬅ Back
+</button>
+
+</header>
+
+<div class="container">
+
+<h1>Breakfast Menu</h1>
+
+<div class="grid" id="menuContainer"></div>
+
+<div class="card add-form">
+
+<h3>Add Breakfast Item</h3>
+
+<input id="itemName" placeholder="Item Name">
+
+<input id="itemPrice" type="number" placeholder="Price">
+
+<input id="itemPrepTime" type="number" placeholder="Preparation Time">
+<input id="itemBatchSize" type="number" placeholder="Batch Size">
+<input id="itemImage" placeholder="Image URL">
+
+<br><br>
+
+<button onclick="addItem()">
+Add Item
+</button>
+
+</div>
+
+</div>
+<script type="module">
+
+import { db } from "./firebase.js";
+
+import {
+collection,
+onSnapshot,
+addDoc,
+updateDoc,
+deleteDoc,
+doc
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+let menu = [];
+function renderMenu(){
+
+const container=document.getElementById("menuContainer");
+
+container.innerHTML="";
+
+menu
+.filter(item=>item.category==="Breakfast")
+.forEach((item,index)=>{
+
+container.innerHTML+=`
+
+<div class="card item-card">
+
+<div class="food-header">
+
+<img src="${item.image}" class="food-icon">
+
+<h3>${item.name}</h3>
+
+</div>
+
+<p class="price">₹${item.price}</p>
+
+<p>Prep Time : ${item.prepTime} mins</p>
+
+<button onclick="editPrice(${index})">
+Edit Price
+</button>
+
+<button class="delete-btn"
+onclick="deleteItem(${index})">
+Delete
+</button>
+
+<div class="toggle">
+
+<label class="switch">
+
+<input type="checkbox"
+${item.available?"checked":""}
+onchange="toggleAvailability(${index})">
+
+<span class="slider"></span>
+
+</label>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+async function toggleAvailability(index){
+
+    const breakfastItems = menu.filter(item => item.category==="Breakfast");
+
+    const item = breakfastItems[index];
+
+    await updateDoc(doc(db,"menu",item.id),{
+
+        available:!item.available
+
+    });
+
+}
+
+async function editPrice(index){
+const breakfastItems = menu.filter(item => item.category==="Breakfast");
+const item = breakfastItems[index];
+
+const actualIndex = menu.findIndex(m =>
+m.name===item.name &&
+m.category==="Breakfast");
+
+let newPrice = prompt("Enter new price",menu[actualIndex].price);
+
+if(newPrice!=null && newPrice!=""){
+
+await updateDoc(doc(db,"menu",item.id),{
+
+    price:parseInt(newPrice)
+
+});
+
+}
+
+}
+
+async function deleteItem(index){
+
+const breakfastItems = menu.filter(item => item.category==="Breakfast");
+const item = breakfastItems[index];
+
+const actualIndex = menu.findIndex(m =>
+m.name===item.name &&
+m.category==="Breakfast");
+
+if(confirm("Delete this item?")){
+
+await deleteDoc(doc(db,"menu",item.id));
+
+}
+
+}
+
+async function addItem(){
+
+let name=document.getElementById("itemName").value.trim();
+
+let price=document.getElementById("itemPrice").value;
+
+let prepTime=document.getElementById("itemPrepTime").value;
+
+let batchSize =
+Number(document.getElementById("itemBatchSize").value);
+let image=document.getElementById("itemImage").value.trim();
+
+if(
+name=="" ||
+price=="" ||
+prepTime=="" ||
+batchSize==""
+){
+
+alert("Please fill all fields");
+
+return;
+
+}
+
+if(image==""){
+
+image="https://placehold.co/80x80?text=Food";
+
+}
+
+await addDoc(collection(db,"menu"),{
+
+name:name,
+
+price:parseInt(price),
+
+prepTime:parseInt(prepTime),
+ batchSize: batchSize,
+image:image,
+
+category:"Breakfast",
+
+available:true
+
+});
+
+document.getElementById("itemName").value="";
+
+document.getElementById("itemPrice").value="";
+
+document.getElementById("itemPrepTime").value="";
+document.getElementById("itemBatchSize").value="";
+document.getElementById("itemImage").value="";
+
+}
+
+onSnapshot(collection(db,"menu"),(snapshot)=>{
+
+    menu=[];
+
+    snapshot.forEach(docSnap=>{
+
+        menu.push({
+
+            id:docSnap.id,
+            ...docSnap.data()
+
+        });
+
+    });
+
+    renderMenu();
+
+});
+window.addItem = addItem;
+window.editPrice = editPrice;
+window.deleteItem = deleteItem;
+window.toggleAvailability = toggleAvailability;
+
+</script>
+
+</body>
+
+</html>
