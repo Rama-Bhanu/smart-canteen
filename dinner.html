@@ -2,14 +2,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Breakfast Menu</title>
-<link rel="stylesheet" href="styles.css">
+
+<title>Dinner Menu</title>
+
+<link rel="stylesheet" href="css/styles.css">
 
 <style>
 
 body{
 font-family:Arial,sans-serif;
-background:#f5f5f5;
+background:#f4f6f8;
 margin:0;
 }
 
@@ -17,8 +19,8 @@ header{
 display:flex;
 justify-content:space-between;
 align-items:center;
-padding:15px 30px;
 background:#2bb5c7;
+padding:15px 25px;
 color:white;
 }
 
@@ -37,66 +39,17 @@ gap:20px;
 background:white;
 padding:20px;
 border-radius:12px;
-box-shadow:0 2px 8px rgba(0,0,0,.15);
+box-shadow:0 2px 10px rgba(0,0,0,.15);
 }
 
 .item-card{
 position:relative;
 }
 
-.toggle{
-position:absolute;
-top:20px;
-right:20px;
-}
-
-.switch{
-position:relative;
-display:inline-block;
-width:42px;
-height:22px;
-}
-
-.switch input{
-display:none;
-}
-
-.slider{
-position:absolute;
-cursor:pointer;
-top:0;
-left:0;
-right:0;
-bottom:0;
-background:#ccc;
-border-radius:30px;
-transition:.3s;
-}
-
-.slider:before{
-content:"";
-position:absolute;
-height:16px;
-width:16px;
-left:3px;
-bottom:3px;
-background:white;
-border-radius:50%;
-transition:.3s;
-}
-
-input:checked+.slider{
-background:#2bb5c7;
-}
-
-input:checked+.slider:before{
-transform:translateX(20px);
-}
-
 .food-header{
 display:flex;
 align-items:center;
-gap:15px;
+gap:12px;
 margin-bottom:10px;
 }
 
@@ -114,15 +67,64 @@ font-size:18px;
 margin:8px 0;
 }
 
+.toggle{
+position:absolute;
+right:20px;
+top:20px;
+}
+
+.switch{
+position:relative;
+display:inline-block;
+width:40px;
+height:22px;
+}
+
+.switch input{
+display:none;
+}
+
+.slider{
+position:absolute;
+cursor:pointer;
+background:#ccc;
+top:0;
+left:0;
+right:0;
+bottom:0;
+border-radius:34px;
+transition:.3s;
+}
+
+.slider:before{
+content:"";
+position:absolute;
+width:16px;
+height:16px;
+left:3px;
+bottom:3px;
+background:white;
+border-radius:50%;
+transition:.3s;
+}
+
+input:checked+.slider{
+background:#2bb5c7;
+}
+
+input:checked+.slider:before{
+transform:translateX(18px);
+}
+
 button{
-padding:10px 15px;
+padding:10px 16px;
 border:none;
 border-radius:8px;
 cursor:pointer;
 background:#2bb5c7;
 color:white;
-margin-right:8px;
 margin-top:8px;
+margin-right:8px;
 }
 
 .delete-btn{
@@ -137,12 +139,13 @@ input{
 width:100%;
 padding:10px;
 margin-top:10px;
-border:1px solid #ccc;
 border-radius:8px;
+border:1px solid #ccc;
 box-sizing:border-box;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -159,22 +162,23 @@ box-sizing:border-box;
 
 <div class="container">
 
-<h1>Breakfast Menu</h1>
+<h1>Dinner Menu</h1>
 
 <div class="grid" id="menuContainer"></div>
 
 <div class="card add-form">
 
-<h3>Add Breakfast Item</h3>
+<h3>Add Dinner Item</h3>
 
 <input id="itemName" placeholder="Item Name">
 
 <input id="itemPrice" type="number" placeholder="Price">
 
 <input id="itemPrepTime" type="number" placeholder="Preparation Time">
-<input id="itemBatchSize" type="number" placeholder="Batch Size">
-<input id="itemImage" placeholder="Image URL">
 
+<input id="itemBatchSize" type="number" placeholder="Batch Size">
+
+<input id="itemImage" placeholder="Image URL">
 <br><br>
 
 <button onclick="addItem()">
@@ -184,8 +188,8 @@ Add Item
 </div>
 
 </div>
-<script type="module">
 
+<script type="module">
 import { db } from "./firebase.js";
 
 import {
@@ -196,8 +200,13 @@ updateDoc,
 deleteDoc,
 doc
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
-
 let menu = [];
+function saveMenu(){
+
+localStorage.setItem("menu",JSON.stringify(menu));
+
+}
+
 function renderMenu(){
 
 const container=document.getElementById("menuContainer");
@@ -205,7 +214,7 @@ const container=document.getElementById("menuContainer");
 container.innerHTML="";
 
 menu
-.filter(item=>item.category==="Breakfast")
+.filter(item=>item.category==="Dinner")
 .forEach((item,index)=>{
 
 container.innerHTML+=`
@@ -223,6 +232,8 @@ container.innerHTML+=`
 <p class="price">₹${item.price}</p>
 
 <p>Prep Time : ${item.prepTime} mins</p>
+
+<p>Batch Size : ${item.batchSize}</p>
 
 <button onclick="editPrice(${index})">
 Edit Price
@@ -256,9 +267,9 @@ onchange="toggleAvailability(${index})">
 }
 async function toggleAvailability(index){
 
-    const breakfastItems = menu.filter(item => item.category==="Breakfast");
+    const dinnerItems = menu.filter(item=>item.category==="Dinner");
 
-    const item = breakfastItems[index];
+    const item = dinnerItems[index];
 
     await updateDoc(doc(db,"menu",item.id),{
 
@@ -267,43 +278,37 @@ async function toggleAvailability(index){
     });
 
 }
-
 async function editPrice(index){
-const breakfastItems = menu.filter(item => item.category==="Breakfast");
-const item = breakfastItems[index];
 
-const actualIndex = menu.findIndex(m =>
-m.name===item.name &&
-m.category==="Breakfast");
+    const dinnerItems = menu.filter(item=>item.category==="Dinner");
 
-let newPrice = prompt("Enter new price",menu[actualIndex].price);
+    const item = dinnerItems[index];
 
-if(newPrice!=null && newPrice!=""){
+    let newPrice = prompt("Enter new price", item.price);
 
-await updateDoc(doc(db,"menu",item.id),{
+    if(newPrice!=null && newPrice!=""){
 
-    price:parseInt(newPrice)
+        await updateDoc(doc(db,"menu",item.id),{
 
-});
+            price:parseInt(newPrice)
 
-}
+        });
+
+    }
 
 }
 
 async function deleteItem(index){
 
-const breakfastItems = menu.filter(item => item.category==="Breakfast");
-const item = breakfastItems[index];
+    const dinnerItems = menu.filter(item=>item.category==="Dinner");
 
-const actualIndex = menu.findIndex(m =>
-m.name===item.name &&
-m.category==="Breakfast");
+    const item = dinnerItems[index];
 
-if(confirm("Delete this item?")){
+    if(confirm("Delete this item?")){
 
-await deleteDoc(doc(db,"menu",item.id));
+        await deleteDoc(doc(db,"menu",item.id));
 
-}
+    }
 
 }
 
@@ -315,16 +320,10 @@ let price=document.getElementById("itemPrice").value;
 
 let prepTime=document.getElementById("itemPrepTime").value;
 
-let batchSize =
-Number(document.getElementById("itemBatchSize").value);
-let image=document.getElementById("itemImage").value.trim();
+let batchSize=document.getElementById("itemBatchSize").value;
 
-if(
-name=="" ||
-price=="" ||
-prepTime=="" ||
-batchSize==""
-){
+let image=document.getElementById("itemImage").value.trim();
+if(name=="" || price=="" || prepTime=="" || batchSize==""){
 
 alert("Please fill all fields");
 
@@ -338,29 +337,45 @@ image="https://placehold.co/80x80?text=Food";
 
 }
 
+// Prevent duplicate items
+let exists = menu.some(item =>
+    item.name.toLowerCase() === name.toLowerCase() &&
+    item.category === "Dinner"
+);
+
+if(exists){
+
+    alert("Item already exists");
+
+    return;
+
+}
+
 await addDoc(collection(db,"menu"),{
 
-name:name,
+    name:name,
 
-price:parseInt(price),
+    price:parseInt(price),
 
-prepTime:parseInt(prepTime),
- batchSize: batchSize,
-image:image,
+    prepTime:parseInt(prepTime),
 
-category:"Breakfast",
+    batchSize:parseInt(batchSize),
 
-available:true
+    image:image,
+
+    category:"Dinner",
+
+    available:true
 
 });
 
 document.getElementById("itemName").value="";
-
 document.getElementById("itemPrice").value="";
-
 document.getElementById("itemPrepTime").value="";
 document.getElementById("itemBatchSize").value="";
 document.getElementById("itemImage").value="";
+
+alert("Dinner item added successfully!");
 
 }
 
@@ -386,9 +401,7 @@ window.addItem = addItem;
 window.editPrice = editPrice;
 window.deleteItem = deleteItem;
 window.toggleAvailability = toggleAvailability;
-
 </script>
 
 </body>
-
 </html>

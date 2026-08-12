@@ -3,9 +3,9 @@
 
 <head>
 
-<title>Breakfast Menu</title>
+<title>Dinner Menu</title>
 
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="css/styles.css">
 
 <style>
 
@@ -67,20 +67,16 @@ padding:10px 18px;
 
 <header>
 
-<h2>Breakfast Menu</h2>
+<h2>Dinner Menu</h2>
 
 <div>
 
 <button onclick="location.href='cart.html'">
-
 View Cart
-
 </button>
 
 <button onclick="location.href='menu.html'">
-
 Back
-
 </button>
 
 </div>
@@ -89,16 +85,16 @@ Back
 
 <div class="container">
 
-<h1>Breakfast</h1>
+<h1>Dinner</h1>
 
-<p>Select your favourite breakfast items.</p>
+<p>Select your favourite dinner items.</p>
 
 <div id="menuContainer"></div>
 
 </div>
 
 <script type="module">
-import { db } from "./firebase.js";
+    import { db } from "./firebase.js";
 
 import {
 collection,
@@ -139,10 +135,9 @@ cart.push(item);
 
 saveCart(cart);
 
-renderBreakfast();
+renderDinner();
 
 }
-
 function increaseQuantity(itemName){
 
 let cart=getCart();
@@ -150,14 +145,12 @@ let cart=getCart();
 let item=cart.find(i=>i.name===itemName);
 
 if(item){
-
 item.quantity++;
-
 }
 
 saveCart(cart);
 
-renderBreakfast();
+renderDinner();
 
 }
 
@@ -172,43 +165,45 @@ if(item){
 item.quantity--;
 
 if(item.quantity<=0){
-
 cart=cart.filter(i=>i.name!==itemName);
-
 }
 
 }
 
 saveCart(cart);
 
-renderBreakfast();
+renderDinner();
 
 }
-function renderBreakfast(){
+
+function renderDinner(){
+
+
 let container=document.getElementById("menuContainer");
 
 container.innerHTML="";
 
-let cart = getCart();
+let cart=getCart();
 
-let breakfastItems = menu.filter(item =>
-    item.category === "Breakfast" &&
+console.log(menu);
+
+
+
+let dinnerItems = menu.filter(item =>
+    item.category === "Dinner" &&
     item.available === true
 );
- console.log("BREAKFAST ITEMS :", breakfastItems);
 
-    console.log("AVAILABLE ITEMS :", menu.filter(item => item.available));
+console.log(dinnerItems);
 
-if(breakfastItems.length===0){
+if(dinnerItems.length===0){
 
 container.innerHTML=`
 
 <div class="card">
 
 <h3 style="text-align:center;">
-
-No Breakfast Items Available
-
+No Dinner Items Available
 </h3>
 
 </div>
@@ -219,7 +214,7 @@ return;
 
 }
 
-breakfastItems.forEach(item=>{
+dinnerItems.forEach(item=>{
 
 let cartItem=cart.find(i=>i.name===item.name);
 
@@ -231,7 +226,7 @@ container.innerHTML+=`
 
 <div class="food-left">
 
-<img src="${item.image}" alt="${item.name}">
+<img src="${item.image || 'https://placehold.co/90x90?text=Food'}" alt="${item.name}">
 
 <div class="food-details">
 
@@ -252,11 +247,7 @@ cartItem ?
 
 <div class="quantity">
 
-<button onclick="decreaseQuantity('${item.name}')">
-
--
-
-</button>
+<button onclick="decreaseQuantity('${item.name}')">-</button>
 
 <span style="font-size:20px;font-weight:bold;min-width:20px;text-align:center;">
 
@@ -264,11 +255,7 @@ ${cartItem.quantity}
 
 </span>
 
-<button onclick="increaseQuantity('${item.name}')">
-
-+
-
-</button>
+<button onclick="increaseQuantity('${item.name}')">+</button>
 
 </div>
 
@@ -279,7 +266,6 @@ ${cartItem.quantity}
 `
 
 <button class="add-btn"
-
 onclick='addToCart(${JSON.stringify(item)})'>
 
 Add to Cart
@@ -308,15 +294,11 @@ onSnapshot(collection(db,"menu"),(snapshot)=>{
 
     snapshot.forEach(docSnap=>{
 
-        console.log(docSnap.data());
-
         menu.push(docSnap.data());
 
     });
 
-    console.log(menu);
-
-    renderBreakfast();
+    renderDinner();
 
 });
 window.addToCart = addToCart;
